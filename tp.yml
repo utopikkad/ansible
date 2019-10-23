@@ -42,7 +42,7 @@
         state: directory
         mode: '0755'
 
-    - name: Synchronize and delete files in dest on the remote host that are not found in src of localhost.
+    - name: Synchronize
       synchronize:
         src: /usr/src/dokuwiki
         dest: /var/www/Y/
