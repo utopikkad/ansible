@@ -71,7 +71,7 @@
       vars: 
         domain: 'Y'
 
-    - name: restart service cron on centos, in all cases, also issue daemon-reload to pick up config changes
+    - name: restart apache2
       systemd:
         state: restarted
         daemon_reload: yes
