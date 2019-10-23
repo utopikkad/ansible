@@ -1,0 +1,79 @@
+---
+- hosts: lb1
+  tasks:
+    - name: Install Apache2 & php
+      apt:
+        name: "{{ packages }}"
+        state: latest
+        update_cache: yes
+      vars:
+        packages:
+          - apache2
+          - php7.3
+
+    - name: Create dir
+      file:
+        path: /usr/src
+        state: directory
+        mode: '0755'
+
+    - name: Download wiki
+      get_url:
+        url: "https://download.dokuwiki.org/src/dokuwiki/dokuwiki-stable.tgz"
+        dest: /usr/src/
+        mode: '0755'
+      register: download_wiki
+
+    - name: Extract into /var/lib/foo
+      unarchive:
+        src: "{{download_wiki.dest}}"
+        dest: /usr/src
+        remote_src: yes
+      when: download_wiki.changed
+      register: extract
+
+    - name: Move
+      command: mv /usr/src/dokuwiki-2018-04-22b/  /usr/src/dokuwiki/
+      when: extract.changed
+
+    - name: Create site folder
+      file:
+        path: /var/www/Y/
+        state: directory
+        mode: '0755'
+
+    - name: Synchronize and delete files in dest on the remote host that are not found in src of localhost.
+      synchronize:
+        src: /usr/src/dokuwiki
+        dest: /var/www/Y/
+      when: extract.changed
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Changing perm of Y
+      file: 
+        dest: /var/www/Y/
+        owner: www-data
+        group: www-data
+        recurse: yes
+
+    - name: Template a file to /etc/files.conf
+      template:
+        src: templates/etc.apache2.site-available.Y.j2
+        dest: /etc/apache2/sites-available/Y.conf
+        owner: www-data
+        group: www-data
+        mode: '0644'
+      vars:
+        alias: [politique.wiki, recettes.wiki, devops.wiki]
+
+    - name: a2ensite {{ domain }}
+      command: a2ensite {{ domain }}
+      vars: 
+        domain: 'Y'
+
+    - name: restart service cron on centos, in all cases, also issue daemon-reload to pick up config changes
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: apache2
+

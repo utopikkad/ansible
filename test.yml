@@ -1,0 +1,8 @@
+---
+
+- hosts: web
+  tasks:
+    - shell: cat /etc/passwd
+      register: test
+    - shell: echo "passwd contain root"
+      when: test.stdout.find('root') != -1 

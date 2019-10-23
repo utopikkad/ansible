@@ -1,0 +1,73 @@
+---
+- hosts: web
+  tasks:
+    - name: Install Apache2 & php
+      apt:
+        name: "{{ packages }}"
+        state: latest
+        update_cache: yes
+      vars:
+        packages:
+          - apache2
+          - php
+          - php-mysql
+          - php-curl
+
+- hosts: db
+  tasks:
+    - name: Install Maria-db
+      apt:
+        name: mariadb-server
+        state: latest
+        update_cache: yes
+
+- hosts: web1
+  tasks:
+    - name: Install NFS server
+      apt:
+        name: "{{ packages }}"
+        state: latest
+        update_cache: yes
+      vars:
+        packages:
+          - nfs-kernel-server
+          - nfs-common
+    - name: Configure NFS erver
+      copy: 
+        content: "{{ content }}" 
+        dest: /etc/exports
+      vars:
+        content: "/var/www/html 192.168.50.30(rw,all_squash,anonuid=0,anongid=0,sync)"
+    - name: Delete /var/www/html
+      file:
+        path: /var/www/html
+        state: absent
+
+- hosts: web2
+  tasks:
+    - name: Install NFS client
+      apt:
+        name: nfs-common
+        state: latest
+        update_cache: yes
+    - name: Configure NFS client
+      copy: 
+        content: "{{ content }}" 
+        dest: /etc/exports
+      vars:
+        content: "/var/www/html 192.168.50.20(rw,all_squash,anonuid=0,anongid=0,sync)"
+#    - name: Configure Fstab
+#      copy:
+#        content: "{{ content }}"
+#        dest: /etc/fstab
+#      vars:
+#        content: "192.168.50.20:/var/www/html   /var/www/html  auto    0   0"
+
+- hosts: lb
+  tasks:
+    - name: Install HaProxy
+      apt:
+        name: haproxy
+        state: latest
+        update_cache: yes
+

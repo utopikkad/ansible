@@ -1,0 +1,9 @@
+{% for i in alias %}
+
+<VirtualHost *:80>
+    ServerName {{i}}
+    ServerAlias {{i}}
+    DocumentRoot "/var/www/Y/dokuwiki"
+</VirtualHost>
+
+{% endfor %}
